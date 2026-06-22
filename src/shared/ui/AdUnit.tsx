@@ -74,7 +74,7 @@ export default function AdUnit({
       <ins
         ref={insRef}
         className="adsbygoogle"
-        style={{ display: "block" }}
+        style={{ display: "block", width: "100%" }}
         data-ad-client={ADSENSE_AD_CLIENT}
         data-ad-slot={slot}
         data-ad-format={format}
