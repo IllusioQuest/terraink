@@ -22,8 +22,14 @@ import {
   type SupportPromptState,
 } from "@/features/export/application/useExport";
 import { useSessionAnalytics } from "@/features/export/application/useSessionAnalytics";
+import {
+  LEGAL_DOC_EVENT,
+  type LegalDocDetail,
+  type LegalDocType,
+} from "@/features/legal/application/legalDoc";
 
 const AboutModal = lazy(() => import("@/shared/ui/AboutModal"));
+const LegalModal = lazy(() => import("@/features/legal/ui/LegalModal"));
 const SettingsPanel = lazy(() => import("@/features/poster/ui/SettingsPanel"));
 const AnnouncementModal = lazy(
   () => import("@/features/updates/ui/AnnouncementModal"),
@@ -98,6 +104,7 @@ export default function AppShell() {
     variant: "warning" | "limit";
     hoursUntilReset?: number;
   } | null>(null);
+  const [legalDoc, setLegalDoc] = useState<LegalDocType | null>(null);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -105,6 +112,14 @@ export default function AppShell() {
     };
     window.addEventListener(SUPPORT_PROMPT_EVENT, handler);
     return () => window.removeEventListener(SUPPORT_PROMPT_EVENT, handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setLegalDoc((e as CustomEvent<LegalDocDetail>).detail.doc);
+    };
+    window.addEventListener(LEGAL_DOC_EVENT, handler);
+    return () => window.removeEventListener(LEGAL_DOC_EVENT, handler);
   }, []);
 
   useEffect(() => {
@@ -343,6 +358,11 @@ export default function AppShell() {
           hoursUntilReset={adBlockModal.hoursUntilReset}
           onClose={() => setAdBlockModal(null)}
         />
+      ) : null}
+      {legalDoc ? (
+        <Suspense fallback={null}>
+          <LegalModal doc={legalDoc} onClose={() => setLegalDoc(null)} />
+        </Suspense>
       ) : null}
     </div>
   );

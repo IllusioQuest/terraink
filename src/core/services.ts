@@ -45,6 +45,10 @@ export { triggerDownloadBlob } from "@/features/export/infrastructure/fileDownlo
 
 export { trackEvent } from "@/core/analytics/gtagAnalytics";
 
+/* ── Legal docs ── */
+
+export { fetchMarkdownDoc } from "@/features/legal/infrastructure/legalDocsAdapter";
+
 /* ── Routes ── */
 
 export { gpxParser } from "@/features/routes/infrastructure/gpxParser";

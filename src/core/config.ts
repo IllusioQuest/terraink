@@ -67,6 +67,8 @@ export const AD_SLOT_MODAL = import.meta.env.VITE_AD_SLOT_MODAL ?? "";
 export const REPO_URL = import.meta.env.VITE_REPO_URL ?? "";
 export const REPO_API_URL = import.meta.env.VITE_REPO_API_URL ?? "";
 export const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL ?? "";
+/* Raw markdown URLs (e.g. raw.githubusercontent.com) for the in-app legal
+   modal — imprint and privacy docs pulled from the meta repo. */
 export const LEGAL_NOTICE_URL = import.meta.env.VITE_LEGAL_NOTICE_URL ?? "";
 export const PRIVACY_URL = import.meta.env.VITE_PRIVACY_URL ?? "";
 

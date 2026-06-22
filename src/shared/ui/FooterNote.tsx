@@ -1,5 +1,11 @@
-﻿import { APP_VERSION, CONTACT_EMAIL, LEGAL_NOTICE_URL, PRIVACY_URL } from "@/core/config";
+﻿import {
+  APP_VERSION,
+  CONTACT_EMAIL,
+  LEGAL_NOTICE_URL,
+  PRIVACY_URL,
+} from "@/core/config";
 import { InfoIcon } from "@/shared/ui/Icons";
+import { openLegalDoc } from "@/features/legal/application/legalDoc";
 
 function handleCookieSettings() {
   const gfc = (window as any).googlefc;
@@ -11,9 +17,12 @@ function handleCookieSettings() {
 export default function FooterNote() {
   const appVersion = APP_VERSION;
   const contactEmail = String(CONTACT_EMAIL ?? "").trim();
-  const legalNoticeUrl = String(LEGAL_NOTICE_URL ?? "").trim();
-  const privacyUrl = String(PRIVACY_URL ?? "").trim();
-  const hasLegalLinks = Boolean(contactEmail || legalNoticeUrl || privacyUrl);
+  // These vars hold the raw markdown URLs; the links open the in-app modal.
+  const imprintAvailable = Boolean(String(LEGAL_NOTICE_URL ?? "").trim());
+  const privacyAvailable = Boolean(String(PRIVACY_URL ?? "").trim());
+  const hasLegalLinks = Boolean(
+    contactEmail || imprintAvailable || privacyAvailable,
+  );
 
   return (
     <footer className="app-footer desktop-footer">
@@ -24,27 +33,25 @@ export default function FooterNote() {
               {contactEmail}
             </a>
           )}
-          {contactEmail && (legalNoticeUrl || privacyUrl) && " | "}
-          {legalNoticeUrl && (
-            <a
+          {contactEmail && (imprintAvailable || privacyAvailable) && " | "}
+          {imprintAvailable && (
+            <button
+              type="button"
               className="source-link"
-              href={legalNoticeUrl}
-              target="_blank"
-              rel="noreferrer"
+              onClick={() => openLegalDoc("imprint")}
             >
               Imprint
-            </a>
+            </button>
           )}
-          {legalNoticeUrl && privacyUrl && " | "}
-          {privacyUrl && (
-            <a
+          {imprintAvailable && privacyAvailable && " | "}
+          {privacyAvailable && (
+            <button
+              type="button"
               className="source-link"
-              href={privacyUrl}
-              target="_blank"
-              rel="noreferrer"
+              onClick={() => openLegalDoc("privacy")}
             >
               Data Privacy
-            </a>
+            </button>
           )}
           {hasLegalLinks && " | "}
           <button
