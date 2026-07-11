@@ -19,7 +19,7 @@ import {
   DEFAULT_POSTER_WIDTH_CM,
   DEFAULT_POSTER_HEIGHT_CM,
 } from "@/core/config";
-import { trackEvent } from "@/core/services";
+import { trackEvent, setUserProperty } from "@/core/services";
 
 export const ADBLOCK_LIMIT_EVENT = "terraink:adblock-limit";
 export const ADBLOCK_WARN_EVENT = "terraink:adblock-warn";
@@ -37,6 +37,37 @@ export const SUPPORT_PROMPT_EVENT = "terraink:support-prompt";
 
 // Use a 1-year TTL so the export count persists across sessions.
 const EXPORT_COUNT_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+
+// Report time-to-first-export once per session (not per export).
+let firstExportTimed = false;
+
+// Timestamp of the last export this session, for measuring the gap between
+// exports. Stays null until the first export, so the param is omitted then.
+let lastExportAt: number | null = null;
+
+/**
+ * Fires the analytics for a successful export: the poster_exported event,
+ * the once-per-session time-to-first-export, and the lifetime_export_count
+ * user property (the current total, not a per-event log entry).
+ */
+function reportExportSuccess(
+  nextCount: number,
+  exportParams: Record<string, string | number | boolean>,
+): void {
+  trackEvent("poster_exported", exportParams);
+
+  if (!firstExportTimed) {
+    firstExportTimed = true;
+    trackEvent("time_to_first_export", {
+      seconds_to_first_export: Math.round(
+        (Date.now() - performance.timeOrigin) / 1000,
+      ),
+    });
+  }
+
+  lastExportAt = Date.now();
+  setUserProperty("lifetime_export_count", nextCount);
+}
 
 function readPosterExportCount(): number {
   const stored = localStorageCache.read<number>(
@@ -76,8 +107,7 @@ export function useExport() {
   );
   const hasVisibleOverlays = hasVisibleMarkers || visibleRoutes.length > 0;
 
-  const registerSuccessfulExport = useCallback(() => {
-    const nextCount = readPosterExportCount() + 1;
+  const registerSuccessfulExport = useCallback((nextCount: number) => {
     writePosterExportCount(nextCount);
 
     // Prompt cadence: follow on the first download and every 5th after → 1, 6, 11, …
@@ -119,6 +149,11 @@ export function useExport() {
 
         // Aggregate, non-personal export data. Use only the structured city /
         // country — never raw input (form.location) or coordinates.
+        const nextCount = readPosterExportCount() + 1;
+        const secondsBetweenExports =
+          lastExportAt !== null
+            ? Math.round((Date.now() - lastExportAt) / 1000)
+            : null;
         const exportParams = {
           format,
           poster_city: form.displayCity.trim() || "unknown",
@@ -128,6 +163,10 @@ export function useExport() {
           font: form.fontFamily.trim() || "default",
           has_markers: hasVisibleMarkers,
           has_routes: visibleRoutes.length > 0,
+          export_number: nextCount,
+          ...(secondsBetweenExports !== null
+            ? { seconds_between_exports: secondsBetweenExports }
+            : {}),
         };
 
         const size = resolveCanvasSize(widthInches, heightInches);
@@ -160,8 +199,8 @@ export function useExport() {
             "svg",
           );
           await triggerDownloadBlob(svgBlob, svgFilename);
-          trackEvent("poster_exported", exportParams);
-          registerSuccessfulExport();
+          reportExportSuccess(nextCount, exportParams);
+          registerSuccessfulExport(nextCount);
           dispatch({ type: "SET_EXPORT_STATUS", exporting: false });
           return;
         }
@@ -216,8 +255,8 @@ export function useExport() {
           await triggerDownloadBlob(pngBlob, filename);
         }
 
-        trackEvent("poster_exported", exportParams);
-        registerSuccessfulExport();
+        reportExportSuccess(nextCount, exportParams);
+        registerSuccessfulExport(nextCount);
         dispatch({ type: "SET_EXPORT_STATUS", exporting: false });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Export failed.";
