@@ -11,11 +11,8 @@ import {
   CITY_FONT_BASE_PX,
   COUNTRY_FONT_BASE_PX,
   COORDS_FONT_BASE_PX,
-  ATTRIBUTION_FONT_BASE_PX,
-  isLatinScript,
   formatCityLabel,
   computeCityFontScale,
-  computeAttributionColor,
 } from "@/features/poster/domain/textLayout";
 
 export function drawPosterText(
@@ -32,9 +29,6 @@ export function drawPosterText(
   includeCredits: boolean = true,
 ): void {
   const textColor = theme.ui?.text || "#111111";
-  const landColor = theme.map?.land || "#808080";
-  const attributionColor = computeAttributionColor(textColor, landColor, showOverlay);
-  const attributionAlpha = showOverlay ? 0.55 : 0.9;
   const titleFontFamily = fontFamily
     ? `"${fontFamily}", "Space Grotesk", sans-serif`
     : '"Space Grotesk", sans-serif';
@@ -46,7 +40,6 @@ export function drawPosterText(
     0.45,
     Math.min(width, height) / TEXT_DIMENSION_REFERENCE_PX,
   );
-  const attributionFontSize = ATTRIBUTION_FONT_BASE_PX * dimScale;
 
   if (showPosterText) {
     const cityLabel = formatCityLabel(city);
@@ -85,29 +78,8 @@ export function drawPosterText(
     ctx.globalAlpha = 1;
   }
 
-  ctx.fillStyle = attributionColor;
-  ctx.globalAlpha = attributionAlpha;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.font = `300 ${attributionFontSize}px ${bodyFontFamily}`;
-  ctx.fillText(
-    "\u00a9 OpenStreetMap contributors",
-    width * (1 - TEXT_EDGE_MARGIN_RATIO),
-    height * (1 - TEXT_EDGE_MARGIN_RATIO),
-  );
-  ctx.globalAlpha = 1;
-
-  if (includeCredits) {
-    ctx.fillStyle = attributionColor;
-    ctx.globalAlpha = attributionAlpha;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "bottom";
-    ctx.font = `300 ${attributionFontSize}px ${bodyFontFamily}`;
-    ctx.fillText(
-      `© ${APP_CREDIT_URL}`,
-      width * TEXT_EDGE_MARGIN_RATIO,
-      height * (1 - TEXT_EDGE_MARGIN_RATIO),
-    );
-    ctx.globalAlpha = 1;
-  }
+  // Watermark / attribution removed by request: do not draw OpenStreetMap or app
+  // credit lines here so exports don't include the watermark. The includeCredits
+  // parameter is intentionally left in the signature for compatibility but is
+  // ignored.
 }
